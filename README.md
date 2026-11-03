@@ -80,6 +80,3 @@ The jar bundles `slf4j-api` (MIT). The license text and copyright notice are in 
 
 ## Versioning and branches
 Versions follow MAJOR.MINOR.PATCH and are set in `gradle.properties`. `main` holds the latest release, `release/vX.Y.Z` holds each release, and `osrb-review` holds the code submitted for open source review. Releases are tagged `vX.Y.Z`.
-
-## Repository
-https://github.hpe.com/kaustubh-mane/custom-attributes
