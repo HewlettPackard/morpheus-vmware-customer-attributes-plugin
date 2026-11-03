@@ -1,0 +1,139 @@
+{{!--
+  Custom Attributes Tab — instanceTab.hbs
+  Displays vCenter VM custom attributes with Add / Edit / Delete controls.
+  CSP-compliant: no inline event handlers; script uses nonce="{{nonce}}".
+
+  Model object fields:
+    instanceId   (Long)
+    instanceName (String)
+    attributes   (List<{name, value}>)
+    error        (String|null)
+    settingsOk   (Boolean)
+    vmMor        (String)  — vCenter VM MOR e.g. "vm-123"
+--}}
+
+<style nonce="{{nonce}}">
+  #ca-container { font-family: inherit; }
+  #ca-container table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  #ca-container th, #ca-container td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; vertical-align: middle; }
+  #ca-container th { background: #f5f5f5; font-weight: 600; }
+  #ca-container tr:hover td { background: #fafafa; }
+  #ca-container .ca-badge-value { font-family: monospace; }
+  #ca-container .ca-empty { color: #999; font-style: italic; }
+  #ca-container .ca-btn { display: inline-block; padding: 4px 10px; border-radius: 3px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
+  #ca-container .ca-btn-edit   { background:#5c7cfa; color:#fff; border-color:#5c7cfa; }
+  #ca-container .ca-btn-delete { background:#fa5252; color:#fff; border-color:#fa5252; margin-left:4px; }
+  #ca-container .ca-btn-add    { background:#40c057; color:#fff; border-color:#40c057; }
+  #ca-container .ca-btn:hover  { opacity: 0.85; }
+  #ca-container .ca-toolbar    { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  #ca-container .ca-spinner    { display: none; }
+  #ca-modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9999;
+    align-items: center; justify-content: center;
+  }
+  #ca-modal-overlay.active { display: flex; }
+  #ca-modal {
+    background: #fff; border-radius: 6px; padding: 28px 32px; min-width: 400px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18); position: relative;
+  }
+  #ca-modal h3 { margin-top: 0; }
+  #ca-modal label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 13px; }
+  #ca-modal input[type=text] { width: 100%; padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+  #ca-modal input[type=text]:focus { outline: none; border-color: #5c7cfa; }
+  #ca-modal .ca-form-group { margin-bottom: 16px; }
+  #ca-modal .ca-modal-footer { text-align: right; margin-top: 8px; }
+  #ca-modal .ca-msg { padding: 8px 12px; border-radius: 4px; margin-bottom: 12px; font-size: 13px; display: none; }
+  #ca-modal .ca-msg.success { background: #d3f9d8; color: #2f9e44; display: block; }
+  #ca-modal .ca-msg.error   { background: #ffe3e3; color: #c92a2a; display: block; }
+  #ca-delete-confirm {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 10000;
+    align-items: center; justify-content: center;
+  }
+  #ca-delete-confirm.active { display: flex; }
+  #ca-delete-confirm .ca-confirm-box {
+    background: #fff; border-radius: 6px; padding: 24px 28px; min-width: 340px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  }
+</style>
+
+<div id="ca-container"
+     data-instance-id="{{instanceId}}"
+     data-instance-name="{{instanceName}}">
+
+  {{#if error}}
+  <div class="ca-msg error" style="display:block; padding:10px 14px; border-radius:4px; background:#ffe3e3; color:#c92a2a; margin-bottom:14px;">
+    <strong>Error:</strong> {{error}}
+  </div>
+  {{else}}
+
+  <div class="ca-toolbar">
+    <h3 style="margin:0;">vCenter Custom Attributes &mdash; <em>{{instanceName}}</em></h3>
+    {{#if settingsOk}}
+    <button class="ca-btn ca-btn-add" id="ca-add-btn">+ Add Attribute</button>
+    {{/if}}
+  </div>
+
+  {{#if attributes.length}}
+  <table id="ca-table">
+    <thead>
+      <tr>
+        <th style="width:40%;">Attribute Name</th>
+        <th>Value</th>
+        <th style="width:120px; text-align:center;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each attributes}}
+      <tr>
+        <td>{{name}}</td>
+        <td class="ca-badge-value">{{#if value}}{{value}}{{else}}<span class="ca-empty">(not set)</span>{{/if}}</td>
+        <td style="text-align:center;">
+          <button class="ca-btn ca-btn-edit"   data-action="edit"   data-name="{{name}}" data-value="{{value}}">Edit</button>
+          <button class="ca-btn ca-btn-delete" data-action="delete" data-name="{{name}}">Delete</button>
+        </td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="ca-empty">No custom attributes found for this VM. Click <strong>+ Add Attribute</strong> to create one.</p>
+  {{/if}}
+
+  {{/if}}
+</div>
+
+<!-- ===== Add / Edit Modal ===== -->
+<div id="ca-modal-overlay">
+  <div id="ca-modal">
+    <h3 id="ca-modal-title">Add Attribute</h3>
+    <div id="ca-modal-msg" class="ca-msg"></div>
+    <div class="ca-form-group">
+      <label for="ca-field-name">Attribute Name</label>
+      <input type="text" id="ca-field-name" placeholder="e.g. Server Function" autocomplete="off"/>
+    </div>
+    <div class="ca-form-group">
+      <label for="ca-field-value">Value</label>
+      <input type="text" id="ca-field-value" placeholder="e.g. Web Server" autocomplete="off"/>
+    </div>
+    <div class="ca-modal-footer">
+      <button class="ca-btn" id="ca-cancel-btn" style="background:#868e96;color:#fff;border-color:#868e96;margin-right:8px;">Cancel</button>
+      <button class="ca-btn ca-btn-add" id="ca-save-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Delete Confirm ===== -->
+<div id="ca-delete-confirm">
+  <div class="ca-confirm-box">
+    <h3 style="margin-top:0;">Clear Attribute?</h3>
+    <p id="ca-delete-msg" style="margin-bottom:20px;">This will clear the value of <strong id="ca-delete-name"></strong> on the VM. The field definition will remain in vCenter.</p>
+    <div style="text-align:right;">
+      <button class="ca-btn" id="ca-cancel-delete-btn" style="background:#868e96;color:#fff;border-color:#868e96;margin-right:8px;">Cancel</button>
+      <button class="ca-btn ca-btn-delete" id="ca-confirm-delete-btn">Clear</button>
+    </div>
+  </div>
+</div>
+
+{{!-- External JS asset — covered by CSP 'self', no nonce required --}}
+<script src="{{asset '/customAttributesTab.js'}}"></script>
+

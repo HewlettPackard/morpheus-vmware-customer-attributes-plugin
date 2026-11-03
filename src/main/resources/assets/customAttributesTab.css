@@ -1,0 +1,518 @@
+/* customAttributesTab.css -- Custom Attributes instance tab (card + edit dialog) */
+
+#ca-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  padding: 16px;
+  color: #1b1b1b;
+  background: #fff;
+}
+
+/* ===== Banners ===== */
+.ca-error-banner {
+  background: #fef0ef;
+  border: 1px solid #f54f47;
+  border-radius: 3px;
+  padding: 12px;
+  color: #f54f47;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.ca-info-banner {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid #a9c8ec;
+  border-left: 4px solid #1d6fc4;
+  background: #eaf3fc;
+  color: #164a80;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.ca-vm-picker {
+  margin: 0 0 16px;
+}
+
+.ca-vm-picker .ca-select {
+  min-width: 280px;
+  max-width: 100%;
+}
+
+.ca-select-note {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6d6d6d;
+}
+
+.ca-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ca-warning-banner {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid #f0c36d;
+  border-left: 4px solid #e0a800;
+  background: #fcf3d6;
+  color: #7a5c00;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* ===== Header ===== */
+.ca-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #d8d8d8;
+}
+
+.ca-header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1b1b1b;
+}
+
+/* ===== Status card ===== */
+.ca-status-card {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 3px;
+  margin-bottom: 16px;
+}
+
+.ca-attr-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #d8d8d8;
+}
+
+.ca-attr-row:last-child {
+  border-bottom: none;
+}
+
+.ca-attr-row:hover {
+  background: #f8f8f8;
+}
+
+.ca-attr-name {
+  flex: 0 0 200px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1b1b1b;
+  word-break: break-word;
+}
+
+.ca-attr-val {
+  flex: 1;
+  font-size: 13px;
+  color: #6d6d6d;
+  word-break: break-all;
+}
+
+.ca-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: #6d6d6d;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ===== Action buttons ===== */
+.ca-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+#ca-container .ca-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px !important;
+  border-radius: 3px !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  cursor: pointer;
+  border: 1px solid #ccc !important;
+  background: #fff !important;
+  color: #1b1b1b !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease;
+}
+
+#ca-container .ca-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+#ca-container .ca-btn-primary {
+  background: #0079b8 !important;
+  color: #fff !important;
+  border-color: #0079b8 !important;
+}
+
+#ca-container .ca-btn-primary:hover {
+  background: #006ba1 !important;
+  border-color: #006ba1 !important;
+}
+
+/* ===== Modal overlay ===== */
+.ca-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 40px;
+  overflow-y: auto;
+}
+
+.ca-modal-overlay.active {
+  display: flex;
+}
+
+.ca-edit-modal {
+  background: #fff;
+  border-radius: 3px;
+  width: 90%;
+  max-width: 800px;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  margin-bottom: 40px;
+}
+
+.ca-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #d8d8d8;
+  flex-shrink: 0;
+}
+
+.ca-modal-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1b1b1b;
+}
+
+#ca-container .ca-modal-close {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+#ca-container .ca-modal-close:hover {
+  color: #333;
+}
+
+.ca-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ===== Add form ===== */
+.ca-add-form {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: flex-end;
+}
+
+.ca-form-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.ca-col-attr {
+  flex: 2;
+  min-width: 150px;
+}
+
+.ca-col-value {
+  flex: 2;
+  min-width: 150px;
+}
+
+.ca-col-type {
+  flex: 1;
+  min-width: 130px;
+}
+
+.ca-col-btn {
+  flex: 0 0 auto;
+}
+
+.ca-label {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: #6d6d6d;
+  text-transform: uppercase;
+}
+
+#ca-container .ca-input,
+#ca-container .ca-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d8d8d8;
+  border-radius: 3px;
+  font-size: 13px;
+  background: #fff;
+  box-sizing: border-box;
+  height: auto;
+}
+
+#ca-container .ca-input:focus,
+#ca-container .ca-select:focus {
+  outline: none;
+  border-color: #0079b8;
+  box-shadow: 0 0 0 2px rgba(0, 121, 184, 0.2);
+}
+
+#ca-container .ca-btn-add {
+  padding: 8px 20px !important;
+  background: #0079b8 !important;
+  color: #fff !important;
+  border: 1px solid #0079b8 !important;
+  border-radius: 3px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: none !important;
+}
+
+#ca-container .ca-btn-add:hover {
+  background: #006ba1 !important;
+  border-color: #006ba1 !important;
+}
+
+/* ===== Status message ===== */
+.ca-status-msg {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.ca-status-msg:empty {
+  display: none;
+}
+
+.ca-status-msg.success {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.ca-status-msg.error {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.ca-status-msg.info {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+/* ===== Attribute list ===== */
+.ca-attr-browser {
+  border: 1px solid #d8d8d8;
+  border-radius: 3px;
+  background: #fff;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.ca-attr-header {
+  display: flex;
+  background: #f8f8f8;
+  border-bottom: 1px solid #d8d8d8;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6d6d6d;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.ca-attr-header-name {
+  flex: 0 0 200px;
+}
+
+.ca-attr-header-value {
+  flex: 1;
+  padding: 0 12px;
+}
+
+.ca-attr-header-type {
+  flex: 0 0 120px;
+  text-align: right;
+}
+
+.ca-attr-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #d8d8d8;
+  transition: background 0.15s;
+}
+
+.ca-attr-item:last-child {
+  border-bottom: none;
+}
+
+.ca-attr-item:hover {
+  background: #f8f8f8;
+}
+
+.ca-attr-item.ca-modified {
+  background: #fffde7;
+  border-left: 3px solid #ffc107;
+}
+
+.ca-attr-item.ca-new {
+  background: #e8f5e9;
+  border-left: 3px solid #4caf50;
+}
+
+.ca-attr-item .ca-attr-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ca-attr-value-wrapper {
+  flex: 1;
+  padding: 0 12px;
+}
+
+#ca-container .ca-value-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #d8d8d8;
+  border-radius: 3px;
+  font-size: 13px;
+  background: #fff;
+  box-sizing: border-box;
+  height: auto;
+}
+
+#ca-container .ca-value-input:focus {
+  outline: none;
+  border-color: #0079b8;
+  box-shadow: 0 0 0 2px rgba(0, 121, 184, 0.2);
+}
+
+.ca-attr-type {
+  flex: 0 0 120px;
+  font-size: 13px;
+  color: #6d6d6d;
+  text-align: right;
+}
+
+.ca-attr-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6d6d6d;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ===== Modal footer ===== */
+.ca-modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #d8d8d8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+#ca-container .ca-btn-cancel,
+#ca-container .ca-btn-save {
+  padding: 8px 20px !important;
+  border-radius: 3px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: all 0.15s;
+  outline: none !important;
+  text-transform: uppercase;
+  box-shadow: none !important;
+}
+
+#ca-container .ca-btn-cancel {
+  background: #fff !important;
+  color: #1b1b1b !important;
+  border: 1px solid #d8d8d8 !important;
+}
+
+#ca-container .ca-btn-cancel:hover {
+  background: #f5f5f5 !important;
+  border-color: #ccc !important;
+}
+
+#ca-container .ca-btn-save {
+  background: #0079b8 !important;
+  color: #fff !important;
+  border: 1px solid #0079b8 !important;
+}
+
+#ca-container .ca-btn-save:hover {
+  background: #006ba1 !important;
+  border-color: #006ba1 !important;
+}
+
+/* SAVE stays disabled-looking until something has changed */
+#ca-container .ca-btn-save:not(.active) {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .ca-add-form {
+    flex-wrap: wrap;
+  }
+
+  .ca-col-attr,
+  .ca-col-value,
+  .ca-col-type {
+    flex: 1 1 100%;
+    min-width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .ca-col-btn {
+    flex: 1 1 100%;
+  }
+
+  .ca-edit-modal {
+    width: 95%;
+    margin: 20px auto;
+  }
+}
