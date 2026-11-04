@@ -85,7 +85,7 @@ jar {
 				'Morpheus-Logo': 'assets/morpheus.svg',
 				'Morpheus-Logo-Dark': 'assets/morpheus.svg',
 				'Morpheus-Labels': 'Plugin',
-				'Morpheus-Repo': 'https://github.hpe.com/kaustubh-mane/custom-attributes',
+				'Morpheus-Repo': 'https://github.com/HewlettPackard/morpheus-vmware-customer-attributes-plugin',
 				'Morpheus-Min-Appliance-Version': "6.3.0"
 		)
 	}
