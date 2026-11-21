@@ -40,7 +40,7 @@ class CustomAttributesInstanceTabProvider extends AbstractInstanceTabProvider {
             Cloud cloud = morpheusContext.async.cloud.get(zoneId).blockingGet()
             if (!SecurityUtil.isVmwareCloud(cloud)) return false
 
-            CustomAttributesTabRenderer.rememberPermission(permLevel)
+            CustomAttributesTabRenderer.rememberPermission(permLevel, SecurityUtil.hasFull(user, CustomAttributesController.DELETE_PERMISSION_CODE))
             return true
         } catch (Exception e) {
             log.warn("CustomAttributesInstanceTabProvider.show: error for instance ${instance?.id}: ${e.class.simpleName}")

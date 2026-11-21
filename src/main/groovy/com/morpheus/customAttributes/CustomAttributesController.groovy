@@ -17,7 +17,7 @@ import groovy.util.logging.Slf4j
  *
  *   GET|POST /plugin/customAttributes/vmData     instanceId, target                       (read access)
  *   POST     /plugin/customAttributes/setAttr    instanceId|serverId, target, name, value, type (Global or VirtualMachine, for a new attribute)
- *   POST     /plugin/customAttributes/clearAttr  instanceId|serverId, target, name
+ *   POST     /plugin/customAttributes/clearAttr  instanceId|serverId, target, name\n *   POST     /plugin/customAttributes/deleteAttr instanceId|serverId, name, key   (needs customAttributes-delete)\n *
  *
  * Exactly one of instanceId or serverId is given. For an instance with several VMs, target is required:
  * a server id of that instance (that VM only) or 'all'. A server id means that VM only.
@@ -31,6 +31,7 @@ import groovy.util.logging.Slf4j
 class CustomAttributesController implements PluginController {
 
     static final String PERMISSION_CODE = 'customAttributes-tab'
+    static final String DELETE_PERMISSION_CODE = 'customAttributes-delete'
 
     Plugin plugin
     MorpheusContext morpheus
@@ -55,6 +56,8 @@ class CustomAttributesController implements PluginController {
             Route.build('/customAttributes/setAttr',   'setAttr',   Permission.build(PERMISSION_CODE, 'full')),
             Route.build('customAttributes/clearAttr',  'clearAttr', Permission.build(PERMISSION_CODE, 'full')),
             Route.build('/customAttributes/clearAttr', 'clearAttr', Permission.build(PERMISSION_CODE, 'full')),
+            Route.build('customAttributes/deleteAttr',  'deleteAttr', Permission.build(DELETE_PERMISSION_CODE, 'full')),
+            Route.build('/customAttributes/deleteAttr', 'deleteAttr', Permission.build(DELETE_PERMISSION_CODE, 'full')),
         ]
     }
 
@@ -64,6 +67,70 @@ class CustomAttributesController implements PluginController {
 
     def clearAttr(ViewModel<Map> model) {
         return handle(model, false)
+    }
+
+    /**
+     * Removes an attribute definition from vCenter, and with it the attribute's value on every VM.
+     * Needs both 'full' on the tab permission and 'full' on the separate delete permission.
+     */
+    def deleteAttr(ViewModel<Map> model) {
+        String ref = SecurityUtil.newRef()
+        Long logUserId = null
+        String logObject = null
+        VCenterSoapClient client = null
+        try {
+            String requestError = SecurityUtil.checkRequest(model?.request)
+            if (requestError) {
+                log.warn("CustomAttributes action=deleteAttr outcome=rejected reason='${requestError}'")
+                return respond(false, requestError)
+            }
+            User user = model.user
+            logUserId = user?.id
+            if (user == null) {
+                return respond(false, 'Not authenticated')
+            }
+            if (!SecurityUtil.hasFull(user, PERMISSION_CODE) || !SecurityUtil.hasFull(user, DELETE_PERMISSION_CODE)) {
+                log.warn("CustomAttributes action=deleteAttr outcome=denied user=${user.id} reason='needs full ${PERMISSION_CODE} and ${DELETE_PERMISSION_CODE}'")
+                return respond(false, 'Permission denied')
+            }
+
+            String instanceParam = model.request.getParameter('instanceId')
+            String serverParam = model.request.getParameter('serverId')
+            boolean hasInstance = instanceParam != null && !instanceParam.isEmpty()
+            boolean hasServer = serverParam != null && !serverParam.isEmpty()
+            Long instanceId = hasInstance ? SecurityUtil.parseId(instanceParam) : null
+            Long serverId = hasServer ? SecurityUtil.parseId(serverParam) : null
+            String attrName = SecurityUtil.cleanAttrName(model.request.getParameter('name'))
+            Long key = SecurityUtil.parseId(model.request.getParameter('key'))
+            boolean idOk = (hasInstance != hasServer) && (hasInstance ? instanceId != null : serverId != null)
+            if (!idOk || attrName == null || key == null || key > Integer.MAX_VALUE) {
+                return respond(false, 'Invalid request parameters')
+            }
+            logObject = hasInstance ? "instance=${instanceId}".toString() : "server=${serverId}".toString()
+
+            // The definition is global, so no single VM is picked; the object is only used to authorize and find the cloud
+            VmTargets.Resolved resolved = resolveTargets(user, 'deleteAttr', logObject, instanceId, serverId, 'all')
+            VCenterCredentials creds = VCenterCredentials.resolve(morpheus, plugin, resolved.cloudId)
+            if (creds == null) {
+                return respond(false, 'vCenter is not available for this cloud')
+            }
+
+            client = new VCenterSoapClient(creds.host, creds.user, creds.password, creds.allowUntrusted)
+            client.login()
+            client.removeFieldDefinition(attrName, key.intValue())
+            log.info("AUDIT customAttributes action=deleteAttr outcome=success user=${user.id} ${logObject} attribute='${attrName}' key=${key}")
+            return respond(true, 'Attribute deleted')
+        } catch (IllegalStateException e) {
+            log.warn("CustomAttributes action=deleteAttr outcome=refused ref=${ref} user=${logUserId} ${logObject} reason='${e.message}'")
+            return respond(false, e.message)
+        } catch (Exception e) {
+            log.error("CustomAttributes action=deleteAttr outcome=failed ref=${ref} user=${logUserId} ${logObject}", e)
+            return respond(false, "The operation failed (reference ${ref})".toString())
+        } finally {
+            if (client != null) {
+                try { client.logout() } catch (Exception ignored) {}
+            }
+        }
     }
 
     /** Attributes of the selected VM (the primary VM for 'all'), for the instance tab's VM picker. */

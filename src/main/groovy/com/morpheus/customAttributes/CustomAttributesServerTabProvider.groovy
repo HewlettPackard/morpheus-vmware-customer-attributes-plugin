@@ -43,7 +43,7 @@ class CustomAttributesServerTabProvider extends AbstractServerTabProvider {
             Cloud cloud = morpheusContext.async.cloud.get(cloudId).blockingGet()
             if (!SecurityUtil.isVmwareCloud(cloud)) return false
 
-            CustomAttributesTabRenderer.rememberPermission(permLevel)
+            CustomAttributesTabRenderer.rememberPermission(permLevel, SecurityUtil.hasFull(user, CustomAttributesController.DELETE_PERMISSION_CODE))
             return true
         } catch (Exception e) {
             log.warn("CustomAttributesServerTabProvider.show: error for server ${server?.id}: ${e.class.simpleName}")

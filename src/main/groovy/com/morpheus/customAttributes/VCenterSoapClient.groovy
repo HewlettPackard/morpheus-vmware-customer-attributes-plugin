@@ -265,20 +265,20 @@ class VCenterSoapClient {
 
     /**
      * Permanently removes a custom attribute definition from vCenter.
-     * This deletes the field from ALL VMs and removes it from the schema entirely.
+     * This deletes the field from ALL VMs (and every other object it applies to) and removes it from the schema.
+     * Only Global and VirtualMachine definitions can be removed, and the name and key must belong together.
      *
-     * @param fieldName  The name of the custom attribute to remove
-     * @throws RuntimeException if the field is not found or the SOAP call fails
+     * @throws IllegalStateException if no such VM-applicable definition exists
      */
-    void removeFieldDefinition(String fieldName) {
-        List<Map<String, Object>> defs = getFieldDefinitions()
-        Map<String, Object> existing = defs.find { normalise(it.name as String) == normalise(fieldName) }
-        if (!existing) {
-            throw new RuntimeException("Custom attribute '${fieldName}' not found in vCenter")
+    void removeFieldDefinition(String fieldName, int key) {
+        Map<String, Object> existing = getVmApplicableFieldDefinitions().find { Map d ->
+            (d.key as int) == key && normalise(d.name as String) == normalise(fieldName)
         }
-        int key = existing.key as int
+        if (!existing) {
+            throw new IllegalStateException('The custom attribute was not found in vCenter or has changed')
+        }
         soapCall(buildRemoveFieldDefinitionEnvelope(customFieldsManagerRef, key), sessionCookie)
-        log.info("VCenterSoapClient: removed field definition '${fieldName}' key=${key}")
+        log.info("VCenterSoapClient: removed field definition '${existing.name}' key=${key} type=${existing.type}")
     }
 
     // -----------------------------------------------------------------------

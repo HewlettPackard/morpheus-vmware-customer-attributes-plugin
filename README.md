@@ -14,7 +14,8 @@ A Morpheus plugin that adds a **Custom Attributes** tab to the instance page and
 - On the **instance page** of an instance with several VMs, a **Virtual machine** dropdown lists each VM and **All VMs**. Nothing is selected at first, and **Edit** stays disabled until a choice is made. With one VM selected the tab shows that VM's attributes and a saved change applies to that VM only. With **All VMs** the tab shows the attributes of the primary VM (the one with the lowest workload id) and a saved change is applied to every VM. A VM that fails does not stop the others, and the failures are reported. An instance with one VM has no dropdown.
 - On the **server page** the tab acts on that one VM only.
 - The tab appears only for VMware clouds (vmware, vsphere or esxi). On the server page it is hidden for servers that are not a vCenter VM.
-- Access is controlled by a Morpheus role permission (none, read, full), the same for both tabs.
+- Access is controlled by Morpheus role permissions (none, read, full) for viewing and editing, plus a separate permission for deleting an attribute. The same permissions apply to both tabs.
+- **Delete** removes an attribute definition from vCenter, and with it the attribute's value on every VM (a Global attribute is removed from every object type). It needs the separate **Custom Attributes Delete** permission, asks for confirmation, and cannot be undone.
 
 ## Requirements
 - Morpheus appliance (manifest minimum version 6.3.0) with a VMware vCenter cloud integration.
@@ -38,6 +39,7 @@ The plugin jar is `build/libs/<project name>-<version>-all.jar`. The latest rele
 | Permission | Code | Levels |
 |---|---|---|
 | Custom Attributes Tab | `customAttributes-tab` | `none` hides the tab. `read` shows it view-only. `full` allows add, edit and clear. |
+| Custom Attributes Delete | `customAttributes-delete` | `none` (default) hides **Delete**. `full` allows deleting an attribute definition. Only users who hold this permission, together with `full` on the tab permission, can delete. |
 
 ### vCenter connection
 The plugin uses the vCenter URL and credentials of the instance's Morpheus cloud integration. It looks for credentials in this order:
@@ -59,6 +61,7 @@ The plugin does not store credentials itself and does not log passwords.
 ## Usage
 1. Open an instance or a server on a VMware cloud and select the **Custom Attributes** tab.
 2. Select **Edit**. Change a value in the list, or enter an attribute name, value and type and select **ADD**. Select **SAVE** to apply all changes, or **CANCEL** to discard them. The **Edit** button is shown only to users with the `full` permission.
+3. To remove an attribute entirely, select **Delete** on its row and confirm. This is shown only to users with the delete permission, and the attribute disappears from all VMs. A row you only just added is dropped without confirmation.
 
 The plugin finds each VM in vCenter by the VM reference (for example `vm-4135`) that Morpheus stores as the external id of the VM's server. It does not look VMs up by name, so renaming a VM does not affect the tab. If any VM has no usable reference, the tab shows an error and makes no change.
 

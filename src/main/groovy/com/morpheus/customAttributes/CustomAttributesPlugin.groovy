@@ -91,7 +91,10 @@ class CustomAttributesPlugin extends Plugin {
         // ---------------------------------------------------------------
         this.setPermissions([
             Permission.build('Custom Attributes Tab', 'customAttributes-tab',
-                [Permission.AccessType.none, Permission.AccessType.read, Permission.AccessType.full])
+                [Permission.AccessType.none, Permission.AccessType.read, Permission.AccessType.full]),
+            // Deleting a definition removes it from every VM in vCenter, so it is granted separately from editing
+            Permission.build('Custom Attributes Delete', 'customAttributes-delete',
+                [Permission.AccessType.none, Permission.AccessType.full])
         ])
 
         // ---------------------------------------------------------------

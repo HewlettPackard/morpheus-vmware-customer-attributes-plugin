@@ -24,6 +24,8 @@
     var BASE_URL    = '/plugin/customAttributes';
     var usePost     = true;
     var DYNAMIC     = container.getAttribute('data-dynamic') === 'true';
+    var CAN_DELETE  = container.getAttribute('data-can-delete') === 'true';
+    var pendingDelete = null;   // { key, name, type, row } while the confirmation dialog is open
 
     var currentTarget = '';    // '' (nothing picked), a server id, or 'all'; only used when DYNAMIC
 
@@ -61,6 +63,11 @@
 
     var saveBtn = document.getElementById('ca-save-btn');
     if (saveBtn) saveBtn.addEventListener('click', saveAllChanges);
+
+    var deleteCancel = document.getElementById('ca-delete-cancel');
+    if (deleteCancel) deleteCancel.addEventListener('click', closeDeleteDialog);
+    var deleteConfirm = document.getElementById('ca-delete-confirm');
+    if (deleteConfirm) deleteConfirm.addEventListener('click', confirmDelete);
 
     var addRowBtn = document.getElementById('ca-add-row-btn');
     if (addRowBtn) addRowBtn.addEventListener('click', addNewRow);
@@ -225,7 +232,85 @@
       row.appendChild(nameEl);
       row.appendChild(wrap);
       row.appendChild(typeEl);
+
+      if (CAN_DELETE) {
+        var actions = document.createElement('div');
+        actions.className = 'ca-attr-actions';
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'ca-row-delete';
+        del.title = 'Delete attribute';
+        del.textContent = 'Delete';
+        del.addEventListener('click', function () {
+          if (isNew) { removeNewRow(row, name); } else { askDelete(key, name, type, row); }
+        });
+        actions.appendChild(del);
+        row.appendChild(actions);
+      }
       return row;
+    }
+
+    // A row that was only added in this dialog does not exist in vCenter yet, so it is just dropped.
+    function removeNewRow(row, name) {
+      newRows = newRows.filter(function (r) { return r.name !== name; });
+      if (row.parentNode) row.parentNode.removeChild(row);
+      updateSaveButton();
+    }
+
+    // -----------------------------------------------------------------------
+    // Delete an attribute definition (removes it from every VM in vCenter)
+    // -----------------------------------------------------------------------
+    function setDeleteStatus(msg, type) {
+      var el = document.getElementById('ca-delete-status');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'ca-status-msg ' + (msg ? type : '');
+    }
+
+    function askDelete(key, name, type, row) {
+      pendingDelete = { key: key, name: name, type: type, row: row };
+      var text = document.getElementById('ca-delete-text');
+      if (text) text.textContent = 'Delete the attribute "' + name + '"?';
+      var globalNote = document.getElementById('ca-delete-global');
+      if (globalNote) globalNote.style.display = (type === 'Global') ? '' : 'none';
+      setDeleteStatus('', '');
+      var confirmBtn = document.getElementById('ca-delete-confirm');
+      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'DELETE'; }
+      showOverlay('ca-delete-modal-overlay');
+    }
+
+    function closeDeleteDialog() {
+      pendingDelete = null;
+      hideOverlay('ca-delete-modal-overlay');
+    }
+
+    function confirmDelete() {
+      if (!pendingDelete) return;
+      var target = pendingDelete;
+      var confirmBtn = document.getElementById('ca-delete-confirm');
+      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'DELETING...'; }
+      setDeleteStatus('Deleting...', 'info');
+
+      pluginCall('deleteAttr', { name: target.name, key: String(target.key) })
+        .then(function (res) {
+          if (!res || res.success === false) {
+            setDeleteStatus((res && res.msg) || 'Unknown error', 'error');
+            if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'DELETE'; }
+            return;
+          }
+          setAttrs(allAttrs.filter(function (a) { return a.key !== target.key; }));
+          delete modifiedValues[target.key];
+          if (target.row && target.row.parentNode) target.row.parentNode.removeChild(target.row);
+          if (allAttrs.length === 0 && newRows.length === 0) populateList();
+          renderCard();
+          updateSaveButton();
+          closeDeleteDialog();
+          showStatus('Attribute "' + target.name + '" deleted.', 'success');
+        })
+        .catch(function (err) {
+          setDeleteStatus('Request failed: ' + (err && err.message ? err.message : err), 'error');
+          if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'DELETE'; }
+        });
     }
 
     function handleValueChange(row, key, isNew, name, newValue) {

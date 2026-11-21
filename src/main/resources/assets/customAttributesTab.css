@@ -493,6 +493,71 @@
   cursor: default;
 }
 
+/* ===== Delete attribute ===== */
+.ca-attr-header-actions,
+.ca-attr-actions {
+  flex: 0 0 80px;
+  text-align: right;
+}
+
+#ca-container .ca-row-delete {
+  background: transparent;
+  border: none;
+  color: #f54f47;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+#ca-container .ca-row-delete:hover {
+  text-decoration: underline;
+}
+
+.ca-delete-modal {
+  background: #fff;
+  border-radius: 4px;
+  width: 440px;
+  max-width: 92vw;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.ca-delete-text {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  word-break: break-word;
+}
+
+.ca-delete-warning {
+  font-size: 13px;
+  color: #7a1c18;
+  background: #fef0ef;
+  border: 1px solid #f54f47;
+  border-radius: 3px;
+  padding: 8px 10px;
+  margin: 0 0 10px;
+}
+
+#ca-container .ca-btn-delete {
+  padding: 8px 20px !important;
+  border-radius: 3px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  background: #f54f47 !important;
+  color: #fff !important;
+  border: 1px solid #f54f47 !important;
+  text-transform: uppercase;
+  box-shadow: none !important;
+}
+
+#ca-container .ca-btn-delete[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
   .ca-add-form {

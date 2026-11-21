@@ -27,6 +27,7 @@ final class CustomAttributesTabRenderer {
 
     // Set by a provider's show(), read by its renderTemplate(); only drives which buttons are drawn.
     private static final ThreadLocal<String> permissionLevel = new ThreadLocal<String>()
+    private static final ThreadLocal<Boolean> deletePermitted = new ThreadLocal<Boolean>()
 
     private CustomAttributesTabRenderer() {}
 
@@ -43,9 +44,15 @@ final class CustomAttributesTabRenderer {
         }
     }
 
-    static void rememberPermission(String level) { permissionLevel.set(level) }
+    static void rememberPermission(String level, boolean canDelete) {
+        permissionLevel.set(level)
+        deletePermitted.set(canDelete)
+    }
 
-    static void forgetPermission() { permissionLevel.remove() }
+    static void forgetPermission() {
+        permissionLevel.remove()
+        deletePermitted.remove()
+    }
 
     /** Reads every VM attribute definition and the VM's values. Throws IllegalStateException when the VM is not in vCenter. */
     static Map fetchAttributes(VCenterCredentials creds, VmTargets.Target target) {
@@ -108,7 +115,9 @@ final class CustomAttributesTabRenderer {
         }
 
         payload.canWrite = ((permissionLevel.get() ?: 'read') == 'full')
+        payload.canDelete = payload.canWrite && (deletePermitted.get() == true)
         permissionLevel.remove()
+        deletePermitted.remove()
 
         return HTMLResponse.success(buildTabHtml(morpheus, payload))
     }
@@ -131,6 +140,7 @@ final class CustomAttributesTabRenderer {
         String  errMsg     = payload.error ? esc(payload.error) : ''
         boolean settingsOk = payload.settingsOk as boolean
         boolean canWrite   = payload.canWrite as boolean
+        boolean canDelete  = payload.canDelete as boolean
         boolean certUntrusted = payload.certUntrusted as boolean
         List    attrs      = (payload.attributes ?: []) as List
         List    attrsWithValues = attrs.findAll { it.value }
@@ -151,7 +161,8 @@ final class CustomAttributesTabRenderer {
          .append('" data-id="').append(oid)
          .append('" data-name="').append(oname)
          .append('" data-dynamic="').append(dynamic && !hasErr)
-         .append('" data-can-write="').append(canWrite && settingsOk).append('">\n')
+         .append('" data-can-write="').append(canWrite && settingsOk)
+         .append('" data-can-delete="').append(canDelete && settingsOk).append('">\n')
 
         if (certUntrusted || (dynamic && !hasErr)) {
             // vCenter reached over HTTPS but the certificate could not be verified (self-signed / untrusted).
@@ -224,7 +235,8 @@ final class CustomAttributesTabRenderer {
                  .append('      <div id="ca-status-msg" class="ca-status-msg"></div>\n')
                  .append('      <div class="ca-attr-browser">\n')
                  .append('        <div class="ca-attr-header"><div class="ca-attr-header-name">Attribute</div>')
-                 .append('<div class="ca-attr-header-value">Value</div><div class="ca-attr-header-type">Type</div></div>\n')
+                 .append('<div class="ca-attr-header-value">Value</div><div class="ca-attr-header-type">Type</div>')
+                 .append(canDelete ? '<div class="ca-attr-header-actions"></div>' : '').append('</div>\n')
                  .append('        <div id="ca-attr-list"></div>\n')
                  .append('      </div>\n')
                  .append('    </div>\n')
@@ -232,6 +244,21 @@ final class CustomAttributesTabRenderer {
                  .append('<button type="button" class="ca-btn-cancel" id="ca-cancel-btn">CANCEL</button>')
                  .append('<button type="button" class="ca-btn-save" id="ca-save-btn">SAVE</button></div>\n')
                  .append('  </div></div>\n')
+
+                if (canDelete) {
+                    b.append('  <div id="ca-delete-modal-overlay" class="ca-modal-overlay"><div id="ca-delete-modal" class="ca-delete-modal">\n')
+                     .append('    <div class="ca-modal-header"><h4 class="ca-modal-title">Delete Custom Attribute</h4></div>\n')
+                     .append('    <div class="ca-modal-body">\n')
+                     .append('      <p id="ca-delete-text" class="ca-delete-text"></p>\n')
+                     .append('      <p class="ca-delete-warning">This removes the attribute and its values from all VMs in vCenter. This cannot be undone.</p>\n')
+                     .append('      <p id="ca-delete-global" class="ca-delete-warning" style="display:none">This is a Global attribute, so it is also removed from hosts, datastores and every other object that uses it.</p>\n')
+                     .append('      <div id="ca-delete-status" class="ca-status-msg"></div>\n')
+                     .append('    </div>\n')
+                     .append('    <div class="ca-modal-footer">')
+                     .append('<button type="button" class="ca-btn-cancel" id="ca-delete-cancel">CANCEL</button>')
+                     .append('<button type="button" class="ca-btn-delete" id="ca-delete-confirm">DELETE</button></div>\n')
+                     .append('  </div></div>\n')
+                }
             }
         }
 
